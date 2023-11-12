@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         button = findViewById(R.id.button);
         textView = findViewById(R.id.textView);
+        textView.setVisibility(View.INVISIBLE);
         processingText = findViewById(R.id.processingText);
 
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         button.setOnClickListener(view -> {
+            textView.setVisibility(View.INVISIBLE);
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             startActivityForResult(intent , 100);
         });

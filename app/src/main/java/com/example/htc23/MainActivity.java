@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         Request request = new Request.Builder()
-                .url("http://127.0.0.1:3000/identify")
+                .url("http://10.0.2.2:3000/identify")
                 .post(requestBody)
                 .build();
 
@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
                     throw new IOException("Unexpected code " + response);
                 }
                 // Handle the response
+                System.out.println(response.body().string());
             }
         });
     }

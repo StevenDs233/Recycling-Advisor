@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         Request request = new Request.Builder()
-                .url("http://10.0.2.2:3000/identify")
+                .url("http://24.224.142.115:3000/identify")
                 .post(requestBody)
                 .build();
 
@@ -110,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
                     throw new IOException("Unexpected code " + response);
                 } else {
                     String responseData = response.body().string();
-//                    System.out.println(responseData);
                     // Set the response data to the TextView on the main thread
                     runOnUiThread(() -> {
                         processingText.setVisibility(View.INVISIBLE);

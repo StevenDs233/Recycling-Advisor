@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private Button button;
     private TextView textView;
+    private TextView processingText;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         button = findViewById(R.id.button);
         textView = findViewById(R.id.textView);
+        processingText = findViewById(R.id.processingText);
 
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{
@@ -73,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
             byte[] byteArray = stream.toByteArray();
 
             sendImageToServer(byteArray);
+            processingText.setVisibility(View.VISIBLE);
         }
     }
 
@@ -106,20 +109,14 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> textView.setText("Error: " + response));
                     throw new IOException("Unexpected code " + response);
                 } else {
-                    textView.setVisibility(View.VISIBLE);
-                    try {
-                        String responseData = response.body().string();
-                        JSONObject jsonObject = new JSONObject(responseData);
-                        JSONArray choices = jsonObject.getJSONArray("choices");
-                        JSONObject firstChoice = choices.getJSONObject(0);
-                        JSONObject message = firstChoice.getJSONObject("message");
-                        String content = message.getString("content");
-                        // Update the TextView on the main thread
-                        runOnUiThread(() -> textView.setText(content));
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        runOnUiThread(() -> textView.setText("Error parsing the response"));
-                    }
+                    String responseData = response.body().string();
+//                    System.out.println(responseData);
+                    // Set the response data to the TextView on the main thread
+                    runOnUiThread(() -> {
+                        processingText.setVisibility(View.INVISIBLE);
+                        textView.setVisibility(View.VISIBLE);
+                        textView.setText(responseData);
+                    });
                 }
             }
         });

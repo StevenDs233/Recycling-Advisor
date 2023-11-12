@@ -1,5 +1,6 @@
 package com.example.htc23;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -13,9 +14,15 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -30,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageView imageView;
     private Button button;
+    private TextView textView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
         imageView = findViewById(R.id.imageView);
         button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
 
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{
@@ -44,22 +53,22 @@ public class MainActivity extends AppCompatActivity {
             }, 100);
         }
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(intent , 100);
-            }
+        button.setOnClickListener(view -> {
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            startActivityForResult(intent , 100);
         });
     }
 
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == 100){
-            Bitmap bitmap = (Bitmap) data.getExtras().get("data");
+            assert data != null;
+            Bitmap bitmap = (Bitmap) Objects.requireNonNull(data.getExtras()).get("data");
             imageView.setImageBitmap(bitmap);
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            assert bitmap != null;
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
             byte[] byteArray = stream.toByteArray();
 
@@ -86,21 +95,33 @@ public class MainActivity extends AppCompatActivity {
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 // Handle the error
                 e.printStackTrace();
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    // Handle the error
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful() || response.body() == null) {
+                    runOnUiThread(() -> textView.setText("Error: " + response));
                     throw new IOException("Unexpected code " + response);
+                } else {
+                    textView.setVisibility(View.VISIBLE);
+                    try {
+                        String responseData = response.body().string();
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        JSONArray choices = jsonObject.getJSONArray("choices");
+                        JSONObject firstChoice = choices.getJSONObject(0);
+                        JSONObject message = firstChoice.getJSONObject("message");
+                        String content = message.getString("content");
+                        // Update the TextView on the main thread
+                        runOnUiThread(() -> textView.setText(content));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        runOnUiThread(() -> textView.setText("Error parsing the response"));
+                    }
                 }
-                // Handle the response
-                System.out.println(response.body().string());
             }
         });
     }
-
 }
